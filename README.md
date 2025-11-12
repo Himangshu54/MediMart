@@ -1,287 +1,200 @@
-# 🏥 MediMart - Full Stack Pharmacy E-Commerce Platform
+# 🏥 MediMart - Pharmacy E-Commerce Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18.x-61dafb)](https://reactjs.org/)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen)](https://nodejs.org/)
 
-A modern, secure, and scalable full-stack pharmacy e-commerce web application built with React, Node.js, MongoDB, and advanced AI features.
+A modern and lightweight pharmacy e-commerce web application built with pure HTML, CSS, JavaScript, and Node.js. Perfect for small-scale demonstrations and learning purposes.
 
 ## ✨ Features
 
-### 🔐 User Features
-- **Secure Authentication**: JWT-based auth with Google OAuth integration
-- **Product Browsing**: Advanced search, filters, and category navigation
-- **Smart Cart**: Persistent cart with coupon and discount management
-- **Prescription Upload**: Secure upload with AI-powered OCR text extraction
-- **Order Tracking**: Real-time order status and history
-- **User Dashboard**: Profile management, address book, order history
-- **Medicine Reminders**: Email notifications for medication schedules
-- **Subscription Service**: Monthly auto-refill for regular medications
+### � Customer Features
+- **Product Browsing**: Search and filter products by category
+- **Shopping Cart**: Add/remove items with quantity management
+- **Prescription Upload**: Upload prescription images (JPG, PNG, PDF up to 5MB)
+- **User Authentication**: Login and registration system
+- **Order Management**: Place orders and view order history
+- **Modern UI**: Animated gradients, glass morphism effects, and smooth transitions
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 
-### 🤖 AI-Powered Features
-- **OCR Prescription Reader**: Automatic medicine name extraction from prescriptions
-- **AI Chatbot**: 24/7 assistance for product queries and order tracking
-- **Medicine Recommender**: Intelligent product suggestions
-- **Health Blog**: Dynamic articles on healthcare topics
-
-### 👨‍💼 Admin Features
-- **Product Management**: Complete CRUD operations with inventory tracking
-- **Prescription Review**: Verify and approve uploaded prescriptions
-- **Order Management**: Process orders and update delivery status
-- **Analytics Dashboard**: Sales reports, revenue tracking, and insights
-- **Banner Management**: Control homepage banners and promotional offers
-- **User Management**: View and manage customer accounts
-
-### 🌐 Additional Features
-- **Multi-language Support**: English & Hindi (i18next)
-- **Dark Mode**: Toggle between light and dark themes
-- **Responsive Design**: Mobile-first, works on all devices
-- **Payment Integration**: Razorpay & Stripe support
-- **Invoice Generation**: Automated PDF invoices
-- **Email Notifications**: Order confirmations and updates
-- **Accessibility**: WCAG-compliant design
+### 🎨 Design Features
+- **Animated Backgrounds**: Dynamic gradient animations
+- **Glass Morphism**: Modern frosted-glass UI effects
+- **Smooth Animations**: Hover effects, page transitions, and loading animations
+- **Toast Notifications**: Real-time feedback for user actions
+- **Professional Product Images**: Real medical product photos from Unsplash
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Framework**: React 18 with Vite
-- **Language**: TypeScript
-- **Styling**: TailwindCSS
-- **State Management**: Context API / Redux Toolkit
-- **Routing**: React Router v6
-- **HTTP Client**: Axios
-- **Forms**: React Hook Form + Zod validation
-- **UI Components**: Custom + Headless UI
-- **Icons**: React Icons / Lucide React
-- **Animations**: Framer Motion
+### Frontend (Pure Vanilla)
+- **HTML5**: Semantic markup
+- **CSS3**: Custom animations, gradients, and glass morphism
+- **JavaScript**: Vanilla JS (No frameworks)
+- **Design**: Modern UI with responsive layout
 
 ### Backend
-- **Runtime**: Node.js 18+
+- **Runtime**: Node.js
 - **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT + Passport.js
-- **File Upload**: Multer + Cloudinary/AWS S3
-- **Validation**: Zod
-- **Logging**: Winston
-- **Security**: Helmet, express-rate-limit, CORS
-- **Email**: Nodemailer
-- **Payment**: Razorpay/Stripe SDK
-- **AI/ML**: OpenAI API, Tesseract.js
-
-### DevOps & Deployment
-- **Frontend Hosting**: Vercel
-- **Backend Hosting**: Render / Railway / AWS EC2
-- **Database**: MongoDB Atlas
-- **File Storage**: Cloudinary / AWS S3
-- **CI/CD**: GitHub Actions
-- **Domain**: Cloudflare DNS
+- **Data Storage**: In-memory (No database)
+- **Dependencies**: express, cors (only 2 packages!)
 
 ## 📁 Project Structure
 
 ```
 MediMart/
-├── frontend/                 # React + Vite frontend
-│   ├── public/              # Static assets
-│   ├── src/
-│   │   ├── api/             # API service layer
-│   │   ├── assets/          # Images, fonts, icons
-│   │   ├── components/      # Reusable components
-│   │   │   ├── common/      # Button, Input, Modal, etc.
-│   │   │   ├── layout/      # Navbar, Footer, Sidebar
-│   │   │   └── features/    # ProductCard, CartItem, etc.
-│   │   ├── contexts/        # React contexts (Auth, Theme, Cart)
-│   │   ├── hooks/           # Custom hooks
-│   │   ├── pages/           # Route pages
-│   │   ├── utils/           # Helper functions
-│   │   ├── types/           # TypeScript types
-│   │   ├── constants/       # App constants
-│   │   ├── App.tsx          # Main app component
-│   │   └── main.tsx         # Entry point
-│   ├── index.html
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── tailwind.config.js
+├── simple-frontend/           # Frontend files
+│   ├── index.html            # Single-page application
+│   ├── style.css             # All styling with animations
+│   └── app.js                # Client-side logic
 │
-├── backend/                  # Node.js + Express backend
-│   ├── src/
-│   │   ├── config/          # Configuration files
-│   │   ├── controllers/     # Route controllers
-│   │   ├── middleware/      # Custom middleware
-│   │   ├── models/          # Mongoose models
-│   │   ├── routes/          # API routes
-│   │   ├── services/        # Business logic
-│   │   ├── utils/           # Helper functions
-│   │   ├── validators/      # Zod schemas
-│   │   ├── types/           # TypeScript types
-│   │   └── server.ts        # Entry point
-│   ├── uploads/             # Temporary file storage
-│   ├── logs/                # Application logs
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env.example
+├── simple-backend/           # Backend server
+│   ├── server.js             # Express server with all APIs
+│   ├── package.json          # Dependencies
+│   └── package-lock.json
 │
 ├── .github/
-│   └── workflows/           # CI/CD workflows
-├── docs/                    # Additional documentation
+│   └── workflows/            # CI/CD configuration
 ├── .gitignore
 ├── LICENSE
-└── README.md
+├── README.md
+└── README-SIMPLE.md          # Quick start guide
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-- MongoDB (local or Atlas)
-- Cloudinary account (for image uploads)
-- Razorpay/Stripe account (for payments)
+- Node.js (v14 or higher)
+- npm (comes with Node.js)
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/medimart.git
-cd medimart
+git clone https://github.com/Himangshu54/MediMart.git
+cd MediMart
 ```
 
-2. **Setup Backend**
+2. **Install Backend Dependencies**
 ```bash
-cd backend
+cd simple-backend
 npm install
-cp .env.example .env
-# Edit .env with your configuration
-npm run dev
 ```
 
-3. **Setup Frontend**
+3. **Run the Server**
 ```bash
-cd frontend
-npm install
-cp .env.example .env
-# Edit .env with your API URL
-npm run dev
+node server.js
 ```
 
-### Environment Variables
+The server will start on `http://localhost:3000` and will serve both the API and frontend files.
 
-#### Backend (.env)
-```env
-NODE_ENV=development
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/medimart
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
-
-# OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Payment
-RAZORPAY_KEY_ID=your_razorpay_key
-RAZORPAY_KEY_SECRET=your_razorpay_secret
-
-# Email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-
-# OpenAI (Optional)
-OPENAI_API_KEY=your_openai_key
-
-# Frontend URL
-FRONTEND_URL=http://localhost:5173
+4. **Access the Application**
+Open your browser and navigate to:
+```
+http://localhost:3000
 ```
 
-#### Frontend (.env)
-```env
-VITE_API_URL=http://localhost:5000/api
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
-VITE_RAZORPAY_KEY=your_razorpay_key
-```
+### Test Credentials
+- **User Account**: `user@medimart.com` / `password123`
+- **Admin Account**: `admin@medimart.com` / `admin123`
 
-## 📱 API Documentation
+## 📱 API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
-- `POST /api/auth/google` - Google OAuth login
 - `POST /api/auth/logout` - User logout
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password` - Reset password
 
 ### Products
-- `GET /api/products` - Get all products (with filters)
+- `GET /api/products` - Get all products
 - `GET /api/products/:id` - Get single product
-- `POST /api/products` - Create product (Admin)
-- `PUT /api/products/:id` - Update product (Admin)
-- `DELETE /api/products/:id` - Delete product (Admin)
+- `GET /api/products/search?q=keyword` - Search products
 
 ### Cart
 - `GET /api/cart` - Get user cart
 - `POST /api/cart` - Add item to cart
-- `PUT /api/cart/:itemId` - Update cart item
-- `DELETE /api/cart/:itemId` - Remove from cart
-- `DELETE /api/cart` - Clear cart
+- `PUT /api/cart/:productId` - Update cart item quantity
+- `DELETE /api/cart/:productId` - Remove item from cart
 
 ### Orders
 - `POST /api/orders` - Create new order
 - `GET /api/orders` - Get user orders
-- `GET /api/orders/:id` - Get single order
-- `PUT /api/orders/:id/cancel` - Cancel order
+- `GET /api/orders/:id` - Get single order details
 
-### Prescriptions
-- `POST /api/prescriptions` - Upload prescription
-- `GET /api/prescriptions` - Get user prescriptions
-- `GET /api/prescriptions/:id` - Get single prescription
-- `PUT /api/prescriptions/:id/approve` - Approve prescription (Admin)
+## 🎨 Key Features Explained
 
-### Admin
-- `GET /api/admin/analytics` - Get analytics data
-- `GET /api/admin/orders` - Get all orders
-- `PUT /api/admin/orders/:id` - Update order status
-- `GET /api/admin/users` - Get all users
+### Prescription Upload
+- Accepts: JPG, PNG, GIF, PDF
+- Max file size: 5MB
+- Real-time validation and feedback
+- File information logged for review
 
-## 🧪 Testing
+### Mock Data
+The application uses in-memory storage with:
+- **8 Products**: Including medicines, vitamins, sanitizers, medical devices
+- **2 Test Users**: One regular user, one admin
+- **Session Management**: Token-based authentication
+- **Cart System**: Per-user shopping cart
+- **Orders**: Order history tracking
 
-```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
-```
+### UI/UX Features
+- **Gradient Animations**: Smooth color transitions
+- **Glass Morphism**: Frosted glass effect on cards
+- **Hover Effects**: Interactive button and card animations
+- **Loading States**: Animated loading overlay
+- **Toast Notifications**: Success/error messages
+- **Smooth Scrolling**: Enhanced page navigation
 
 ## 🚀 Deployment
 
-### Frontend (Vercel)
+This is a simple demonstration project. For deployment:
+
+### Option 1: Deploy on Render/Railway
+1. Push your code to GitHub
+2. Connect your repository to Render or Railway
+3. Set the start command: `node server.js`
+4. Deploy!
+
+### Option 2: Deploy on Heroku
 ```bash
-cd frontend
-vercel --prod
+heroku create medimart-app
+git push heroku main
 ```
 
-### Backend (Render/Railway)
-- Connect GitHub repository
-- Set environment variables
-- Deploy from main branch
+### Option 3: Deploy on Vercel/Netlify (with serverless functions)
+Convert the Express server to serverless functions for deployment.
+
+## 💡 Learning Outcomes
+
+This project demonstrates:
+- ✅ Clean HTML/CSS/JavaScript architecture
+- ✅ RESTful API design with Express.js
+- ✅ Client-server communication
+- ✅ Session management without databases
+- ✅ File upload handling
+- ✅ Modern UI/UX design principles
+- ✅ Responsive web design
+- ✅ Form validation
+- ✅ Error handling and user feedback
 
 ## 🤝 Contributing
 
+Contributions are welcome! Feel free to:
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
+
+## 📝 Future Enhancements
+
+Possible improvements:
+- Add a real database (MongoDB/PostgreSQL)
+- Implement payment gateway integration
+- Add email notifications
+- Create admin dashboard
+- Add product reviews and ratings
+- Implement real-time chat support
+- Add inventory management
+- Create mobile app version
 
 ## 📄 License
 
@@ -289,20 +202,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+**Himangshu Saikia**
+- GitHub: [@Himangshu54](https://github.com/Himangshu54)
 
 ## 🙏 Acknowledgments
 
-- Inspired by 1mg, NetMeds, and Apollo Pharmacy
-- Icons from React Icons
-- UI inspiration from various design systems
+- Product images from [Unsplash](https://unsplash.com)
+- Icons and emojis for UI enhancement
+- Inspired by modern e-commerce platforms
 
 ## 📞 Support
 
-For support, email support@medimart.com or join our Slack channel.
+For questions or support, please open an issue on GitHub.
 
 ---
 
-**Built with ❤️ for healthcare accessibility**
+**Built with ❤️ for learning and demonstration purposes**
