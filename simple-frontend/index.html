@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🏥 MediMart - Your Online Pharmacy</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
 </head>
 <body>
@@ -30,12 +33,13 @@
             </div>
             <div class="nav-links">
                 <a href="#" onclick="showPage('home')">Home</a>
-                <a href="#" onclick="showPage('products')">Products</a>
                 <a href="#" onclick="showPage('cart')" id="cart-link">
                     🛒 Cart (<span id="cart-count">0</span>)
                 </a>
                 <a href="#" onclick="showPage('orders')" id="orders-link" style="display:none;">Orders</a>
-                <a href="#" onclick="showPage('login')" id="login-link">Login</a>
+                <a href="#" onclick="showPharmacyPortal()" id="pharmacy-link">Pharmacy</a>
+                <a href="#" onclick="showAdminPortal()" id="admin-link">Admin</a>
+                <a href="#" onclick="showPage('login')" id="login-link">Customer</a>
                 <a href="#" onclick="logout()" id="logout-link" style="display:none;">Logout</a>
                 <span id="user-name" style="display:none; color: #4CAF50; font-weight: bold;"></span>
             </div>
@@ -47,8 +51,8 @@
         <div class="hero">
             <div class="container">
                 <h1>Welcome to MediMart</h1>
-                <p>Your trusted online pharmacy for all your healthcare needs</p>
-                <button class="btn btn-primary" onclick="showPage('products')">Shop Now</button>
+                <p>Connect customers with verified local pharmacies for safe, fast medicine access.</p>
+                <button class="btn btn-primary" onclick="goBrowseMedicines()">Browse Medicines</button>
             </div>
         </div>
         
@@ -83,30 +87,27 @@
     <div id="products-page" class="page">
         <div class="container">
             <h1 class="page-title">Our Products</h1>
-            
+
             <div class="filters">
-                <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
-                <select id="category-filter" onchange="filterByCategory()">
-                    <option value="all">All Categories</option>
-                    <option value="Pain Relief">Pain Relief</option>
-                    <option value="Vitamins">Vitamins</option>
-                    <option value="Hygiene">Hygiene</option>
-                    <option value="Devices">Devices</option>
-                    <option value="First Aid">First Aid</option>
-                    <option value="Supplements">Supplements</option>
-                    <option value="Safety">Safety</option>
-                </select>
+                <input type="text" id="search-input" placeholder="Search medicines...">
+                <input type="text" id="category-filter" placeholder="Category" readonly>
+                <input type="number" id="city-filter" placeholder="City ID">
+                <input type="text" id="pincode-filter" placeholder="Pincode">
+                <button class="btn btn-primary" onclick="searchProducts()">Search</button>
                 <div class="prescription-upload">
                     <input type="file" id="prescription-input" accept="image/*,.pdf" style="display: none;" onchange="handlePrescriptionUpload(event)">
                     <button class="btn-upload" onclick="document.getElementById('prescription-input').click()">
-                        📄 Upload Prescription
+                        Upload Prescription
                     </button>
                 </div>
             </div>
-            
-            <div id="products-grid" class="products-grid">
-                <!-- Products will be loaded here -->
+
+            <div class="category-section">
+                <h2>Browse by Category</h2>
+                <div id="category-grid" class="category-grid"></div>
             </div>
+            
+            <div id="products-grid" class="products-list"></div>
         </div>
     </div>
 
@@ -140,7 +141,7 @@
         <div class="container">
             <div class="auth-container">
                 <div class="auth-box">
-                    <h2>Login</h2>
+                    <h2>Customer Login</h2>
                     <form id="login-form" onsubmit="login(event)">
                         <div class="form-group">
                             <label>Email</label>
@@ -155,11 +156,6 @@
                     <p class="auth-switch">
                         Don't have an account? <a href="#" onclick="showPage('register')">Register</a>
                     </p>
-                    <div class="test-credentials">
-                        <p><strong>Test Accounts:</strong></p>
-                        <p>User: user@medimart.com / password123</p>
-                        <p>Admin: admin@medimart.com / admin123</p>
-                    </div>
                 </div>
             </div>
         </div>
@@ -173,12 +169,32 @@
                     <h2>Register</h2>
                     <form id="register-form" onsubmit="register(event)">
                         <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="register-name" required>
+                            <label>First Name</label>
+                            <input type="text" id="register-first-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="register-last-name" required>
                         </div>
                         <div class="form-group">
                             <label>Email</label>
                             <input type="email" id="register-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" id="register-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Street</label>
+                            <input type="text" id="register-street" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pincode</label>
+                            <input type="text" id="register-pincode" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City ID</label>
+                            <input type="number" id="register-city-id" required>
                         </div>
                         <div class="form-group">
                             <label>Password</label>
@@ -194,6 +210,218 @@
         </div>
     </div>
 
+    <!-- Pharmacy Login Page -->
+    <div id="pharmacy-login-page" class="page">
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-box">
+                    <h2>Pharmacy Login</h2>
+                    <form id="pharmacy-login-form" onsubmit="pharmacyLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="pharmacy-login-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="pharmacy-login-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    </form>
+                    <p class="auth-switch">
+                        New pharmacy? <a href="#" onclick="showPage('pharmacy-register')">Register</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pharmacy Register Page -->
+    <div id="pharmacy-register-page" class="page">
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-box">
+                    <h2>Pharmacy Register</h2>
+                    <form id="pharmacy-register-form" onsubmit="pharmacyRegister(event)">
+                        <div class="form-group">
+                            <label>Pharmacy Name</label>
+                            <input type="text" id="pharmacy-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>License Number</label>
+                            <input type="text" id="pharmacy-license" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="pharmacy-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" id="pharmacy-phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Street</label>
+                            <input type="text" id="pharmacy-street" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pincode</label>
+                            <input type="text" id="pharmacy-pincode" required>
+                        </div>
+                        <div class="form-group">
+                            <label>City ID</label>
+                            <input type="number" id="pharmacy-city-id" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="pharmacy-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Register</button>
+                    </form>
+                    <p class="auth-switch">
+                        Already registered? <a href="#" onclick="showPage('pharmacy-login')">Login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pharmacy Dashboard Page -->
+    <div id="pharmacy-dashboard-page" class="page">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1 class="page-title">Pharmacy Dashboard</h1>
+                <button class="btn btn-danger" onclick="pharmacyLogout()">Logout</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Orders</h2>
+                        <button class="btn btn-primary" onclick="loadPharmacyOrders()">Refresh</button>
+                    </div>
+                    <div id="pharmacy-orders"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Stock</h2>
+                        <button class="btn btn-primary" onclick="loadPharmacyStock()">Refresh</button>
+                    </div>
+                    <div id="pharmacy-stock"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Add Medicine</h2>
+                </div>
+                <form id="add-medicine-form" onsubmit="addMedicine(event)">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label>Medicine Name</label>
+                            <input type="text" id="medicine-name" placeholder="Medicine name" required>
+                        </div>
+                        <div class="field">
+                            <label>Category</label>
+                            <select id="medicine-category" required>
+                                <option value="Pain Relief">Pain Relief</option>
+                                <option value="Vitamins">Vitamins</option>
+                                <option value="Hygiene">Hygiene</option>
+                                <option value="Devices">Devices</option>
+                                <option value="First Aid">First Aid</option>
+                                <option value="Supplements">Supplements</option>
+                                <option value="Safety">Safety</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Manufacturer</label>
+                            <input type="text" id="medicine-manufacturer" placeholder="Manufacturer">
+                        </div>
+                        <div class="field">
+                            <label>Batch No</label>
+                            <input type="text" id="medicine-batch" placeholder="Batch no" required>
+                        </div>
+                        <div class="field">
+                            <label>MFG Date</label>
+                            <input type="date" id="medicine-mfg" required>
+                        </div>
+                        <div class="field">
+                            <label>Price</label>
+                            <input type="number" id="medicine-price" placeholder="Price" step="0.01" required>
+                        </div>
+                        <div class="field">
+                            <label>Stock</label>
+                            <input type="number" id="medicine-stock" placeholder="Stock" required>
+                        </div>
+                        <div class="field">
+                            <label>Expiry Date</label>
+                            <input type="date" id="medicine-expiry" required>
+                        </div>
+                        <div class="field">
+                            <label>Prescription</label>
+                            <select id="medicine-rx" required>
+                                <option value="false">No prescription</option>
+                                <option value="true">Prescription required</option>
+                            </select>
+                        </div>
+                    </div>
+                    <textarea id="medicine-description" placeholder="Description"></textarea>
+                    <button type="submit" class="btn btn-primary">Add Medicine</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Page -->
+    <div id="admin-login-page" class="page">
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-box">
+                    <h2>Admin Login</h2>
+                    <form id="admin-login-form" onsubmit="adminLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="admin-login-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="admin-login-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard Page -->
+    <div id="admin-dashboard-page" class="page">
+        <div class="container">
+            <div class="dashboard-header">
+                <div>
+                    <h1 class="page-title">Super Admin</h1>
+                    <p class="dashboard-subtitle" id="admin-pincode"></p>
+                </div>
+                <button class="btn btn-danger" onclick="adminLogout()">Logout</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Pending Pharmacies</h2>
+                    <button class="btn btn-primary" onclick="loadAdminPharmacies()">Refresh</button>
+                </div>
+                <div class="admin-controls">
+                    <div class="admin-tabs">
+                        <button class="tab-button active" data-status="PENDING" onclick="setAdminStatus('PENDING')">Pending</button>
+                        <button class="tab-button" data-status="APPROVED" onclick="setAdminStatus('APPROVED')">Approved</button>
+                        <button class="tab-button" data-status="REJECTED" onclick="setAdminStatus('REJECTED')">Rejected</button>
+                    </div>
+                    <input type="text" id="admin-search" class="admin-search" placeholder="Search pharmacy name, email, license..." oninput="filterAdminPharmacies()">
+                </div>
+                <div id="admin-pharmacies"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
@@ -204,11 +432,11 @@
             <p style="color: #6b7280; margin-bottom: 20px; font-weight: 600;">Your trusted online pharmacy for all your healthcare needs</p>
             <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
                 <a href="#" onclick="showPage('home')" style="color: #10b981; text-decoration: none; font-weight: 600;">Home</a>
-                <a href="#" onclick="showPage('products')" style="color: #10b981; text-decoration: none; font-weight: 600;">Products</a>
-                <a href="#" onclick="showPage('cart')" style="color: #10b981; text-decoration: none; font-weight: 600;">Cart</a>
-                <a href="#" onclick="showPage('orders')" style="color: #10b981; text-decoration: none; font-weight: 600;">Orders</a>
+                <a href="#" onclick="showPage('login')" style="color: #10b981; text-decoration: none; font-weight: 600;">Customer</a>
+                <a href="#" onclick="showPharmacyPortal()" style="color: #10b981; text-decoration: none; font-weight: 600;">Pharmacy</a>
+                <a href="#" onclick="showAdminPortal()" style="color: #10b981; text-decoration: none; font-weight: 600;">Admin</a>
             </div>
-            <p style="margin-top: 30px; color: #9ca3af; font-size: 14px; font-weight: 600;">© 2025 MediMart. Built with ❤️ using HTML, CSS, JS & Node.js</p>
+            <p style="margin-top: 30px; color: #9ca3af; font-size: 14px; font-weight: 600;">© 2025 MediMart. Trusted pharmacy connections for local communities.</p>
         </div>
     </footer>
 
