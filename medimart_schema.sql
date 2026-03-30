@@ -112,7 +112,7 @@ CREATE TABLE `orders` (
   `customer_id` int NOT NULL,
   `pharmacy_id` int NOT NULL,
   `order_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `order_status` enum('PENDING','ACCEPTED','REJECTED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
+  `order_status` enum('PENDING','ACCEPTED','REJECTED','SHIPPED','DELIVERED','CANCELLED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
   PRIMARY KEY (`order_id`),
   KEY `customer_id` (`customer_id`),
   KEY `pharmacy_id` (`pharmacy_id`),
@@ -160,6 +160,7 @@ CREATE TABLE `prescription` (
   `order_id` int DEFAULT NULL,
   `doctor_name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
   `file_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ocr_text` text COLLATE utf8mb4_unicode_ci,
   `upload_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`prescription_id`),
   KEY `customer_id` (`customer_id`),
@@ -180,13 +181,38 @@ CREATE TABLE `super_admin` (
   `admin_id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `role` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pincode` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `city_id` int DEFAULT NULL,
   PRIMARY KEY (`admin_id`),
   UNIQUE KEY `email` (`email`),
-  UNIQUE KEY `uniq_super_admin_pincode` (`pincode`)
+  UNIQUE KEY `uniq_super_admin_pincode` (`pincode`),
+  KEY `city_id` (`city_id`),
+  CONSTRAINT `super_admin_ibfk_1` FOREIGN KEY (`city_id`) REFERENCES `city` (`city_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `refresh_token`
+--
+
+DROP TABLE IF EXISTS `refresh_token`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `refresh_token` (
+  `token_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `role` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token_hash` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `revoked_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`token_id`),
+  UNIQUE KEY `uniq_refresh_token_hash` (`token_hash`),
+  KEY `idx_refresh_token_user` (`user_id`,`role`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

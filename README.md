@@ -48,10 +48,17 @@ npm install
 node server.js
 ```
 
+Frontend (open directly or serve locally):
+```bash
+start ..\simple-frontend\index.html
+```
+
 Open:
 ```
 http://localhost:3000
 ```
+
+More details: see [README-SIMPLE.md](README-SIMPLE.md).
 
 **Test credentials**
 - User: user@medimart.com / password123
@@ -69,16 +76,30 @@ DB_USER=your_user
 DB_PASSWORD=your_password
 DB_NAME=medimart
 JWT_SECRET=change-me
+FLASK_DEBUG=false
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-1.5-flash
 ```
 
-2) Install and run the API:
+2) Load the database schema (and optional seed data):
+```bash
+mysql -u your_user -p medimart < medimart_schema.sql
+mysql -u your_user -p medimart < seed.sql
+```
+
+If you already have a database, apply the OCR column migration:
+```bash
+mysql -u your_user -p medimart < backend/migrations/0005_gemini_ocr.sql
+```
+
+3) Install and run the API:
 ```bash
 cd backend
 python -m pip install -r requirements.txt
 python app.py
 ```
 
-3) Serve the frontend:
+4) Serve the frontend:
 ```bash
 cd simple-frontend
 python -m http.server 5500

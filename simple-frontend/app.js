@@ -1,4 +1,7 @@
-const API_URL = 'http://localhost:5000';
+const API_URL = (() => {
+    const meta = document.querySelector('meta[name="api-base-url"]');
+    return meta && meta.content ? meta.content : 'http://localhost:5000';
+})();
 
 const STORAGE_KEYS = {
     customerToken: 'mm_customer_token',
@@ -7,6 +10,7 @@ const STORAGE_KEYS = {
     pharmacyUser: 'mm_pharmacy_user',
     adminToken: 'mm_admin_token',
     adminUser: 'mm_admin_user',
+    addresses: 'mm_addresses',
     cart: 'mm_cart',
     prescription: 'mm_prescription_id'
 };
@@ -22,6 +26,8 @@ let currentResults = [];
 let lastPrescriptionId = localStorage.getItem(STORAGE_KEYS.prescription);
 let adminPharmacies = [];
 let adminStatus = 'PENDING';
+let addressBook = [];
+let citiesCache = [];
 const medicineCategories = [
     'Pain Relief',
     'Vitamins',
@@ -73,6 +79,8 @@ function setCustomer(user, newToken) {
     customerToken = newToken;
     localStorage.setItem(STORAGE_KEYS.customerUser, JSON.stringify(user));
     localStorage.setItem(STORAGE_KEYS.customerToken, newToken);
+    loadAddressBook();
+    syncAddressBookFromCustomer();
 }
 
 function setPharmacy(user, newToken) {
@@ -113,9 +121,68 @@ function clearAdminAuth() {
 function clearCustomerState() {
     cart = [];
     lastPrescriptionId = null;
+    addressBook = [];
     localStorage.removeItem(STORAGE_KEYS.cart);
     localStorage.removeItem(STORAGE_KEYS.prescription);
     updateCartCount();
+}
+
+function getAddressStorageKey() {
+    if (!currentCustomer) {
+        return null;
+    }
+    const emailSafe = (currentCustomer.email || '').replace(/[^a-zA-Z0-9]/g, '_');
+    return `${STORAGE_KEYS.addresses}_${currentCustomer.customer_id}_${emailSafe}`;
+}
+
+function loadAddressBook() {
+    const key = getAddressStorageKey();
+    if (!key) {
+        addressBook = [];
+        return;
+    }
+    addressBook = safeJsonParse(localStorage.getItem(key)) || [];
+}
+
+function saveAddressBook() {
+    const key = getAddressStorageKey();
+    if (!key) {
+        return;
+    }
+    localStorage.setItem(key, JSON.stringify(addressBook));
+}
+
+function syncAddressBookFromCustomer() {
+    if (!currentCustomer) {
+        return;
+    }
+    const { street, pincode, city_id } = currentCustomer;
+    if (!street || !pincode || !city_id) {
+        return;
+    }
+    const exists = addressBook.find(
+        item => item.street === street && item.pincode === pincode && Number(item.city_id) === Number(city_id)
+    );
+    if (!exists) {
+        addressBook.unshift({
+            label: 'Default',
+            street,
+            pincode,
+            city_id,
+            isDefault: addressBook.length === 0
+        });
+    }
+    if (!addressBook.some(item => item.isDefault)) {
+        addressBook[0].isDefault = true;
+    }
+    saveAddressBook();
+}
+
+function persistCurrentCustomer() {
+    if (!currentCustomer) {
+        return;
+    }
+    localStorage.setItem(STORAGE_KEYS.customerUser, JSON.stringify(currentCustomer));
 }
 
 function setExclusiveRole(role) {
@@ -166,8 +233,166 @@ document.addEventListener('DOMContentLoaded', () => {
     showPage('home');
     updateCartCount();
 
+    loadCityOptions('register-city-id');
+    loadCityOptions('pharmacy-city-id');
+    loadCityOptions('address-city-id');
+
     document.documentElement.style.scrollBehavior = 'smooth';
 });
+
+async function loadCityOptions(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select a city</option>';
+    try {
+        const response = await fetch(`${API_URL}/cities`);
+        if (!response.ok) {
+            showToast('Failed to load cities', 'error');
+            return;
+        }
+        const data = await response.json();
+        citiesCache = data.cities || [];
+        citiesCache.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city.city_id;
+            option.textContent = `${city.city_name}, ${city.state} (ID: ${city.city_id})`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        showToast('Failed to load cities', 'error');
+    }
+}
+
+function getCityLabel(cityId) {
+    const city = citiesCache.find(item => Number(item.city_id) === Number(cityId));
+    if (!city) {
+        return cityId ? `City ID: ${cityId}` : 'Unknown city';
+    }
+    return `${city.city_name}, ${city.state}`;
+}
+
+function openProfile() {
+    if (!currentCustomer) {
+        return;
+    }
+    loadAddressBook();
+    syncAddressBookFromCustomer();
+    renderProfile();
+    loadCityOptions('address-city-id');
+    const modal = document.getElementById('profile-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeProfile() {
+    const modal = document.getElementById('profile-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function renderProfile() {
+    const container = document.getElementById('profile-details');
+    if (!container || !currentCustomer) {
+        return;
+    }
+    const defaultAddress = addressBook.find(item => item.isDefault) || {};
+    container.innerHTML = `
+        <div class="profile-card">
+            <small>Name</small>
+            <strong>${currentCustomer.first_name || ''} ${currentCustomer.last_name || ''}</strong>
+        </div>
+        <div class="profile-card">
+            <small>Email</small>
+            <strong>${currentCustomer.email || '—'}</strong>
+        </div>
+        <div class="profile-card">
+            <small>Phone</small>
+            <strong>${currentCustomer.phone || '—'}</strong>
+        </div>
+        <div class="profile-card">
+            <small>Default Address</small>
+            <strong>${defaultAddress.street || currentCustomer.street || '—'}</strong>
+            <div>${defaultAddress.pincode || currentCustomer.pincode || ''} · ${getCityLabel(defaultAddress.city_id || currentCustomer.city_id)} (ID: ${defaultAddress.city_id || currentCustomer.city_id || '—'})</div>
+        </div>
+    `;
+    renderAddressList();
+}
+
+function renderAddressList() {
+    const list = document.getElementById('address-list');
+    if (!list) {
+        return;
+    }
+    if (!addressBook.length) {
+        list.innerHTML = '<p>No addresses saved yet.</p>';
+        return;
+    }
+    list.innerHTML = addressBook.map((address, index) => `
+        <div class="address-card">
+            <div>
+                <h4>${address.label || 'Address'} ${address.isDefault ? '(Default)' : ''}</h4>
+                <div>${address.street}</div>
+                <div>${address.pincode} · ${getCityLabel(address.city_id)} (ID: ${address.city_id})</div>
+            </div>
+            <div class="address-actions">
+                <button class="use-btn" onclick="setDefaultAddress(${index})">Use</button>
+                <button class="remove-btn" onclick="removeAddress(${index})">Remove</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function setDefaultAddress(index) {
+    addressBook = addressBook.map((item, idx) => ({
+        ...item,
+        isDefault: idx === index
+    }));
+    const selected = addressBook[index];
+    if (selected) {
+        currentCustomer.street = selected.street;
+        currentCustomer.pincode = selected.pincode;
+        currentCustomer.city_id = selected.city_id;
+        persistCurrentCustomer();
+    }
+    saveAddressBook();
+    renderProfile();
+}
+
+function removeAddress(index) {
+    addressBook.splice(index, 1);
+    if (!addressBook.some(item => item.isDefault) && addressBook.length) {
+        addressBook[0].isDefault = true;
+    }
+    saveAddressBook();
+    renderProfile();
+}
+
+function addAddress(event) {
+    event.preventDefault();
+    const street = document.getElementById('address-street').value.trim();
+    const pincode = document.getElementById('address-pincode').value.trim();
+    const cityId = parseInt(document.getElementById('address-city-id').value, 10);
+    const label = document.getElementById('address-label').value.trim() || 'Other';
+
+    if (!street || !pincode || Number.isNaN(cityId)) {
+        showToast('Please fill all address fields', 'error');
+        return;
+    }
+
+    addressBook.push({
+        label,
+        street,
+        pincode,
+        city_id: cityId,
+        isDefault: addressBook.length === 0
+    });
+    saveAddressBook();
+    renderProfile();
+    event.target.reset();
+}
 
 // Show/Hide Pages
 function showPage(pageName) {
@@ -204,6 +429,8 @@ function showPage(pageName) {
 
     if (pageName === 'products') {
         loadProducts();
+    } else if (pageName === 'register') {
+        loadCityOptions('register-city-id');
     } else if (pageName === 'cart') {
         loadCart();
     } else if (pageName === 'orders') {
@@ -220,6 +447,8 @@ function showPage(pageName) {
         }
         loadPharmacyOrders();
         loadPharmacyStock();
+    } else if (pageName === 'pharmacy-register') {
+        loadCityOptions('pharmacy-city-id');
     } else if (pageName === 'admin-dashboard') {
         if (!adminToken) {
             showPage('admin-login');
@@ -322,6 +551,25 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+function setPrescriptionOcrText(text) {
+    const panel = document.getElementById('prescription-ocr');
+    const textarea = document.getElementById('prescription-ocr-text');
+    if (!panel || !textarea) {
+        return;
+    }
+    if (!text) {
+        textarea.value = '';
+        panel.style.display = 'none';
+        return;
+    }
+    textarea.value = text;
+    panel.style.display = 'block';
+}
+
+function clearPrescriptionOcr() {
+    setPrescriptionOcrText('');
+}
+
 // Handle Prescription Upload
 async function handlePrescriptionUpload(event) {
     const file = event.target.files[0];
@@ -378,6 +626,7 @@ async function handlePrescriptionUpload(event) {
 
         lastPrescriptionId = data.prescription_id;
         localStorage.setItem(STORAGE_KEYS.prescription, String(lastPrescriptionId));
+        setPrescriptionOcrText(data.ocr_text || '');
         showToast('Prescription uploaded successfully');
     } catch (error) {
         showToast('Upload failed. Please try again.', 'error');
@@ -447,11 +696,12 @@ async function login(event) {
 
         const data = await response.json();
         if (!response.ok) {
-            showToast(data.error || 'Login failed', 'error');
+            const message = data.error || (data.errors && Object.values(data.errors).flat().join(', '));
+            showToast(message || 'Login failed', 'error');
             return;
         }
 
-        setCustomer(data.customer, data.token);
+        setCustomer(data.customer, data.access_token);
         updateAuthUI(true);
         updateRoleUI();
         showToast('Login successful');
@@ -477,7 +727,7 @@ async function register(event) {
     const password = document.getElementById('register-password').value;
 
     if (Number.isNaN(city_id)) {
-        showToast('City ID must be a number', 'error');
+        showToast('Please select a city from the list', 'error');
         return;
     }
 
@@ -501,13 +751,14 @@ async function register(event) {
 
         const data = await response.json();
         if (!response.ok) {
-            showToast(data.error || 'Registration failed', 'error');
+            const message = data.error || (data.errors && Object.values(data.errors).flat().join(', '));
+            showToast(message || 'Registration failed', 'error');
             return;
         }
 
         setCustomer(
-            { customer_id: data.customer_id, first_name, last_name, email },
-            data.token
+            { customer_id: data.customer_id, first_name, last_name, email, phone, street, pincode, city_id },
+            data.access_token
         );
         updateAuthUI(true);
         updateRoleUI();
@@ -642,6 +893,18 @@ function addToCart(medicineId) {
     const medicine = currentResults.find(item => item.medicine_id === medicineId);
     if (!medicine) {
         showToast('Medicine not found', 'error');
+        return;
+    }
+
+    if (medicine.requires_prescription && !lastPrescriptionId) {
+        const shouldUpload = window.confirm('This medicine requires a prescription. Upload now?');
+        if (shouldUpload) {
+            const input = document.getElementById('prescription-input');
+            if (input) {
+                input.click();
+            }
+        }
+        showToast('Prescription required before adding to cart', 'error');
         return;
     }
 
@@ -846,6 +1109,7 @@ async function loadOrders() {
     }
 }
 
+
 // Display Orders
 function displayOrders(orders) {
     const ordersList = document.getElementById('orders-list');
@@ -946,11 +1210,12 @@ async function pharmacyLogin(event) {
 
         const data = await response.json();
         if (!response.ok) {
-            showToast(data.error || 'Login failed', 'error');
+            const message = data.error || (data.errors && Object.values(data.errors).flat().join(', '));
+            showToast(message || 'Login failed', 'error');
             return;
         }
 
-        setPharmacy(data.pharmacy, data.token);
+        setPharmacy(data.pharmacy, data.access_token);
         showToast('Pharmacy login successful');
         updateRoleUI();
         showPage('pharmacy-dashboard');
@@ -974,7 +1239,7 @@ async function pharmacyRegister(event) {
     const password = document.getElementById('pharmacy-password').value;
 
     if (Number.isNaN(city_id)) {
-        showToast('City ID must be a number', 'error');
+        showToast('Please select a city from the list', 'error');
         return;
     }
 
@@ -998,7 +1263,8 @@ async function pharmacyRegister(event) {
 
         const data = await response.json();
         if (!response.ok) {
-            showToast(data.error || 'Registration failed', 'error');
+            const message = data.error || (data.errors && Object.values(data.errors).flat().join(', '));
+            showToast(message || 'Registration failed', 'error');
             return;
         }
 
@@ -1267,11 +1533,12 @@ async function adminLogin(event) {
 
         const data = await response.json();
         if (!response.ok) {
-            showToast(data.error || 'Login failed', 'error');
+            const message = data.error || (data.errors && Object.values(data.errors).flat().join(', '));
+            showToast(message || 'Login failed', 'error');
             return;
         }
 
-        setAdmin(data.admin, data.token);
+        setAdmin(data.admin, data.access_token);
         showToast('Admin login successful');
         updateAdminHeader();
         updateRoleUI();

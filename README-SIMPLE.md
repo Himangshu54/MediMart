@@ -48,6 +48,37 @@ Perfect for showcasing frontend skills and e-commerce features without backend c
 **Step 1: Install Dependencies**
 ```powershell
 # Backend (Simple version - no database!)
-cd MediMart/backend
+cd MediMart/simple-backend
 
-npm install cors express
+npm install
+```
+
+**Step 2: Start the Simple API**
+```powershell
+node server.js
+```
+
+**Step 3: Open the Frontend**
+```powershell
+# Option A: open directly
+start ..\simple-frontend\index.html
+
+# Option B: serve with Python
+cd ..\simple-frontend
+python -m http.server 5500
+```
+
+Open:
+```
+http://localhost:5500
+```
+
+**Step 4: (Optional) Point the Frontend to Another API**
+Edit the meta tag in [simple-frontend/index.html](simple-frontend/index.html):
+```
+<meta name="api-base-url" content="http://localhost:5000">
+```
+
+**Step 5: Test Accounts**
+- User: user@medimart.com / password123
+- Admin: admin@medimart.com / admin123

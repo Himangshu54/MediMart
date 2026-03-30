@@ -1,6 +1,9 @@
 flask
 flask-cors
+flask-limiter
+marshmallow
 mysql-connector-python
+requests
 python-dotenv
 PyJWT
 Werkzeug

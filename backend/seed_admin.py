@@ -2,7 +2,7 @@ from werkzeug.security import generate_password_hash
 from db import get_db_connection
 
 
-def seed_admin(name, email, password, pincode, role="SUPER_ADMIN"):
+def seed_admin(name, email, password, pincode, city_id=None, role="SUPER_ADMIN"):
     hashed_pw = generate_password_hash(password)
     conn = get_db_connection()
     cur = conn.cursor()
@@ -15,8 +15,8 @@ def seed_admin(name, email, password, pincode, role="SUPER_ADMIN"):
         return
 
     cur.execute(
-        "INSERT INTO SUPER_ADMIN (name, email, password, role, pincode) VALUES (%s, %s, %s, %s, %s)",
-        (name, email, hashed_pw, role, pincode),
+        "INSERT INTO SUPER_ADMIN (name, email, password, role, pincode, city_id) VALUES (%s, %s, %s, %s, %s, %s)",
+        (name, email, hashed_pw, role, pincode, city_id),
     )
     conn.commit()
     print("Admin created")
@@ -29,4 +29,6 @@ if __name__ == "__main__":
     email = input("Admin email: ").strip()
     password = input("Admin password: ").strip()
     pincode = input("Admin pincode: ").strip()
-    seed_admin(name, email, password, pincode)
+    city_id_input = input("Admin city_id (optional): ").strip()
+    city_id = int(city_id_input) if city_id_input.isdigit() else None
+    seed_admin(name, email, password, pincode, city_id)
