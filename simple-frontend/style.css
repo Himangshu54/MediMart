@@ -501,6 +501,12 @@ body {
     font-weight: 500;
 }
 
+.filters input.locked {
+    background: rgba(226, 232, 240, 0.95);
+    color: var(--dark);
+    cursor: not-allowed;
+}
+
 .filters input:focus,
 .filters select:focus {
     outline: none;

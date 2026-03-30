@@ -647,11 +647,22 @@ def logout():
 # -----------------------------
 
 @app.get("/medicines/search")
+@auth_required(roles=["customer"])
 def search_medicines():
     name = request.args.get("name", "").strip()
     category = request.args.get("category", "").strip()
-    city_id = request.args.get("city_id")
     pincode = request.args.get("pincode")
+
+    customer_id = request.user.get("sub")
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT city_id FROM CUSTOMER WHERE customer_id = %s", (customer_id,))
+    customer_row = cur.fetchone()
+    if not customer_row:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Customer not found"}), 404
+    city_id = customer_row.get("city_id")
 
     query = (
         "SELECT m.medicine_id, m.medicine_name, m.category, m.description, m.manufacturer, m.batch_no, m.mfg_date, "
@@ -678,8 +689,6 @@ def search_medicines():
         query += " AND p.pincode = %s"
         params.append(pincode)
 
-    conn = get_db_connection()
-    cur = conn.cursor(dictionary=True)
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
     cur.close()
