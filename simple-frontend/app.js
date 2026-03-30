@@ -81,6 +81,7 @@ function setCustomer(user, newToken) {
     localStorage.setItem(STORAGE_KEYS.customerToken, newToken);
     loadAddressBook();
     syncAddressBookFromCustomer();
+    syncLocationFiltersFromCustomer();
 }
 
 function setPharmacy(user, newToken) {
@@ -125,6 +126,39 @@ function clearCustomerState() {
     localStorage.removeItem(STORAGE_KEYS.cart);
     localStorage.removeItem(STORAGE_KEYS.prescription);
     updateCartCount();
+    syncLocationFiltersFromCustomer();
+}
+
+function syncLocationFiltersFromCustomer() {
+    const cityInput = document.getElementById('city-filter');
+    const pincodeInput = document.getElementById('pincode-filter');
+    if (!cityInput) {
+        return;
+    }
+    if (currentCustomer && currentCustomer.city_id) {
+        cityInput.value = currentCustomer.city_id;
+        cityInput.readOnly = true;
+        cityInput.classList.add('locked');
+        if (pincodeInput && currentCustomer.pincode) {
+            pincodeInput.value = currentCustomer.pincode;
+        }
+        refreshProductsIfVisible();
+        return;
+    }
+    cityInput.value = '';
+    cityInput.readOnly = true;
+    cityInput.classList.remove('locked');
+    if (pincodeInput) {
+        pincodeInput.value = '';
+    }
+    refreshProductsIfVisible();
+}
+
+function refreshProductsIfVisible() {
+    const productsPage = document.getElementById('products-page');
+    if (productsPage && productsPage.classList.contains('active') && currentCustomer) {
+        loadProducts();
+    }
 }
 
 function getAddressStorageKey() {
@@ -356,6 +390,7 @@ function setDefaultAddress(index) {
         currentCustomer.pincode = selected.pincode;
         currentCustomer.city_id = selected.city_id;
         persistCurrentCustomer();
+        syncLocationFiltersFromCustomer();
     }
     saveAddressBook();
     renderProfile();
@@ -365,6 +400,11 @@ function removeAddress(index) {
     addressBook.splice(index, 1);
     if (!addressBook.some(item => item.isDefault) && addressBook.length) {
         addressBook[0].isDefault = true;
+        currentCustomer.street = addressBook[0].street;
+        currentCustomer.pincode = addressBook[0].pincode;
+        currentCustomer.city_id = addressBook[0].city_id;
+        persistCurrentCustomer();
+        syncLocationFiltersFromCustomer();
     }
     saveAddressBook();
     renderProfile();
@@ -389,6 +429,13 @@ function addAddress(event) {
         city_id: cityId,
         isDefault: addressBook.length === 0
     });
+    if (addressBook.length === 1) {
+        currentCustomer.street = street;
+        currentCustomer.pincode = pincode;
+        currentCustomer.city_id = cityId;
+        persistCurrentCustomer();
+        syncLocationFiltersFromCustomer();
+    }
     saveAddressBook();
     renderProfile();
     event.target.reset();
@@ -784,18 +831,26 @@ function logout() {
 async function loadProducts() {
     showLoading();
     try {
+        if (!currentCustomer) {
+            showToast('Please login to search medicines', 'error');
+            showPage('login');
+            return;
+        }
         const search = document.getElementById('search-input')?.value || '';
-        const cityId = document.getElementById('city-filter')?.value || '';
+        const cityId = currentCustomer?.city_id || '';
         const pincode = document.getElementById('pincode-filter')?.value || '';
         const category = selectedCategory || document.getElementById('category-filter')?.value || '';
 
         const params = new URLSearchParams();
         if (search) params.append('name', search);
         if (category) params.append('category', category);
-        if (cityId) params.append('city_id', cityId);
         if (pincode) params.append('pincode', pincode);
 
-        const response = await fetch(`${API_URL}/medicines/search?${params.toString()}`);
+        const response = await fetch(`${API_URL}/medicines/search?${params.toString()}`, {
+            headers: {
+                ...getAuthHeaders('customer')
+            }
+        });
         const data = await response.json();
 
         if (response.ok) {
