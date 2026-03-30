@@ -5,6 +5,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 import base64
 import hashlib
 import os
+import re
 import secrets
 import smtplib
 import ssl
@@ -133,6 +134,41 @@ def send_email(to_email, subject, body):
     except Exception as exc:
         app.logger.exception("Email send failed: %s", exc)
         return False
+
+
+_COMPOSITION_STOPWORDS = {
+    "mg",
+    "ml",
+    "mcg",
+    "g",
+    "kg",
+    "iu",
+    "tablet",
+    "tablets",
+    "capsule",
+    "capsules",
+    "tab",
+    "cap",
+}
+
+
+def extract_composition_tokens(text):
+    if not text:
+        return []
+    cleaned = re.sub(r"[^a-z0-9+ ]", " ", text.lower())
+    cleaned = re.sub(r"\b\d+(?:\.\d+)?\b", " ", cleaned)
+    tokens = [
+        token
+        for token in cleaned.split()
+        if len(token) >= 3 and token not in _COMPOSITION_STOPWORDS
+    ]
+    seen = set()
+    result = []
+    for token in tokens:
+        if token not in seen:
+            seen.add(token)
+            result.append(token)
+    return result
 
 
 _GEMINI_MODEL_CACHE = None
@@ -291,6 +327,8 @@ class PharmacyRegisterSchema(Schema):
     street = fields.String(required=True, validate=validate.Length(min=1, max=255))
     pincode = fields.String(required=True, validate=validate.Length(min=3, max=20))
     city_id = fields.Integer(required=True)
+    latitude = fields.Float(load_default=None, allow_none=True, validate=validate.Range(min=-90, max=90))
+    longitude = fields.Float(load_default=None, allow_none=True, validate=validate.Range(min=-180, max=180))
 
 
 class LoginSchema(Schema):
@@ -466,8 +504,8 @@ def pharmacy_register():
         cur.execute(
             """
             INSERT INTO PHARMACY
-            (pharmacy_name, license_number, email, phone, password, street, pincode, city_id)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            (pharmacy_name, license_number, email, phone, password, street, pincode, city_id, latitude, longitude)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
                 data["pharmacy_name"],
@@ -478,6 +516,8 @@ def pharmacy_register():
                 data["street"],
                 data["pincode"],
                 data["city_id"],
+                data.get("latitude"),
+                data.get("longitude"),
             ),
         )
         conn.commit()
@@ -652,6 +692,20 @@ def search_medicines():
     name = request.args.get("name", "").strip()
     category = request.args.get("category", "").strip()
     pincode = request.args.get("pincode")
+    user_lat = request.args.get("lat")
+    user_lng = request.args.get("lng")
+
+    try:
+        user_lat = float(user_lat) if user_lat else None
+        user_lng = float(user_lng) if user_lng else None
+    except ValueError:
+        return jsonify({"error": "Invalid latitude/longitude"}), 400
+
+    if (user_lat is None) != (user_lng is None):
+        return jsonify({"error": "Both lat and lng are required"}), 400
+
+    if user_lat is not None and (user_lat < -90 or user_lat > 90 or user_lng < -180 or user_lng > 180):
+        return jsonify({"error": "Latitude/longitude out of range"}), 400
 
     customer_id = request.user.get("sub")
     conn = get_db_connection()
@@ -664,37 +718,95 @@ def search_medicines():
         return jsonify({"error": "Customer not found"}), 404
     city_id = customer_row.get("city_id")
 
-    query = (
-        "SELECT m.medicine_id, m.medicine_name, m.category, m.description, m.manufacturer, m.batch_no, m.mfg_date, "
+    distance_expr = (
+        "CASE WHEN p.latitude IS NULL OR p.longitude IS NULL THEN NULL ELSE "
+        "(6371 * ACOS( COS(RADIANS(%s)) * COS(RADIANS(p.latitude)) * "
+        "COS(RADIANS(p.longitude) - RADIANS(%s)) + SIN(RADIANS(%s)) * SIN(RADIANS(p.latitude)) )) END"
+    )
+    include_distance = user_lat is not None and user_lng is not None
+
+    select_fields = (
+        "m.medicine_id, m.medicine_name, m.category, m.description, m.manufacturer, m.batch_no, m.mfg_date, "
         "m.price, m.stock_quantity, m.expiry_date, m.requires_prescription, p.pharmacy_id, p.pharmacy_name, "
         "p.street, p.pincode, "
-        "c.city_name, c.state "
+    )
+    if include_distance:
+        select_fields += f"{distance_expr} AS distance_km, "
+    select_fields += "c.city_name, c.state "
+
+    base_query = (
+        f"SELECT {select_fields}"
         "FROM MEDICINE m "
         "JOIN PHARMACY p ON m.pharmacy_id = p.pharmacy_id "
         "JOIN CITY c ON p.city_id = c.city_id "
         "WHERE p.approval_status = 'APPROVED' AND m.stock_quantity > 0"
     )
+    filters = []
     params = []
+    if include_distance:
+        params.extend([user_lat, user_lng, user_lat])
 
     if name:
-        query += " AND m.medicine_name LIKE %s"
+        filters.append("m.medicine_name LIKE %s")
         params.append(f"%{name}%")
     if category:
-        query += " AND m.category = %s"
+        filters.append("m.category = %s")
         params.append(category)
     if city_id:
-        query += " AND c.city_id = %s"
+        filters.append("c.city_id = %s")
         params.append(city_id)
     if pincode:
-        query += " AND p.pincode = %s"
+        filters.append("p.pincode = %s")
         params.append(pincode)
+
+    query = base_query
+    if filters:
+        query += " AND " + " AND ".join(filters)
+    if include_distance:
+        query += " ORDER BY (distance_km IS NULL) ASC, distance_km ASC"
 
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
+
+    alternatives = []
+    alternatives_message = None
+    if not rows and name:
+        tokens = extract_composition_tokens(name)
+        if tokens:
+            alt_filters = []
+            alt_params = []
+            if include_distance:
+                alt_params.extend([user_lat, user_lng, user_lat])
+            if category:
+                alt_filters.append("m.category = %s")
+                alt_params.append(category)
+            if city_id:
+                alt_filters.append("c.city_id = %s")
+                alt_params.append(city_id)
+            if pincode:
+                alt_filters.append("p.pincode = %s")
+                alt_params.append(pincode)
+            for token in tokens:
+                alt_filters.append("m.description LIKE %s")
+                alt_params.append(f"%{token}%")
+            alt_filters.append("m.medicine_name NOT LIKE %s")
+            alt_params.append(f"%{name}%")
+
+            alt_query = base_query
+            if alt_filters:
+                alt_query += " AND " + " AND ".join(alt_filters)
+            if include_distance:
+                alt_query += " ORDER BY (distance_km IS NULL) ASC, distance_km ASC"
+            alt_query += " LIMIT 20"
+
+            cur.execute(alt_query, tuple(alt_params))
+            alternatives = cur.fetchall()
+            if alternatives:
+                alternatives_message = "No exact brand found. Showing alternatives with similar composition."
     cur.close()
     conn.close()
 
-    return jsonify({"results": rows}), 200
+    return jsonify({"results": rows, "alternatives": alternatives, "alternatives_message": alternatives_message}), 200
 
 
 # -----------------------------

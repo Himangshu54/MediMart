@@ -11,6 +11,8 @@ MediMart includes two runnable setups:
 
 - Customer, pharmacy, and admin flows
 - Medicine search by category/city/pincode
+- Location-aware sorting (nearest pharmacy first)
+- Alternative medicine suggestions (based on composition in description)
 - Cart and order management
 - Prescription uploads (JPG/PNG/PDF)
 - Responsive UI with modern styling
@@ -92,6 +94,11 @@ If you already have a database, apply the OCR column migration:
 mysql -u your_user -p medimart < backend/migrations/0005_gemini_ocr.sql
 ```
 
+If you already have a database, apply the pharmacy location migration:
+```bash
+mysql -u your_user -p medimart < backend/migrations/0006_pharmacy_geo.sql
+```
+
 3) Install and run the API:
 ```bash
 cd backend
@@ -144,6 +151,12 @@ http://localhost:5500
 
 **Prescription Upload**
 - `POST /prescriptions`
+
+## 📍 Location & Alternatives Notes
+
+- Location sorting uses the browser GPS (free) and works on HTTPS or localhost.
+- Pharmacies should capture their location during registration via the "Use current location" button.
+- Alternative medicines are derived from keywords in the medicine description. Keep composition text in `description` for reliable matches.
 
 ## 📄 License
 

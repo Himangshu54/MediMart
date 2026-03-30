@@ -137,6 +137,8 @@ CREATE TABLE `pharmacy` (
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `street` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `pincode` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `latitude` decimal(9,6) DEFAULT NULL,
+  `longitude` decimal(9,6) DEFAULT NULL,
   `approval_status` enum('PENDING','APPROVED','REJECTED') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PENDING',
   `registration_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `city_id` int NOT NULL,

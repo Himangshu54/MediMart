@@ -276,6 +276,11 @@
                             <input type="text" id="pharmacy-pincode" required>
                         </div>
                         <div class="form-group">
+                            <label>Location</label>
+                            <button type="button" class="btn btn-primary" onclick="capturePharmacyLocation()">Use current location</button>
+                            <small id="pharmacy-location-status" style="display:block; margin-top:8px; color:#64748b;">Location not set.</small>
+                        </div>
+                        <div class="form-group">
                             <label>City</label>
                             <select id="pharmacy-city-id" required></select>
                         </div>

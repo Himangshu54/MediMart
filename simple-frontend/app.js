@@ -12,8 +12,11 @@ const STORAGE_KEYS = {
     adminUser: 'mm_admin_user',
     addresses: 'mm_addresses',
     cart: 'mm_cart',
-    prescription: 'mm_prescription_id'
+    prescription: 'mm_prescription_id',
+    geoLocation: 'mm_geo_location'
 };
+
+const GEO_CACHE_TTL_MS = 30 * 60 * 1000;
 
 let customerToken = localStorage.getItem(STORAGE_KEYS.customerToken);
 let currentCustomer = safeJsonParse(localStorage.getItem(STORAGE_KEYS.customerUser));
@@ -28,6 +31,7 @@ let adminPharmacies = [];
 let adminStatus = 'PENDING';
 let addressBook = [];
 let citiesCache = [];
+let pharmacyLocation = null;
 const medicineCategories = [
     'Pain Relief',
     'Vitamins',
@@ -67,6 +71,100 @@ function safeJsonParse(value) {
         return value ? JSON.parse(value) : null;
     } catch {
         return null;
+    }
+}
+
+function getCachedLocation() {
+    const cached = safeJsonParse(localStorage.getItem(STORAGE_KEYS.geoLocation));
+    if (!cached || typeof cached.lat !== 'number' || typeof cached.lng !== 'number') {
+        return null;
+    }
+    if (!cached.timestamp || Date.now() - cached.timestamp > GEO_CACHE_TTL_MS) {
+        return null;
+    }
+    return { lat: cached.lat, lng: cached.lng };
+}
+
+function setCachedLocation(location) {
+    if (!location) {
+        return;
+    }
+    localStorage.setItem(
+        STORAGE_KEYS.geoLocation,
+        JSON.stringify({ lat: location.lat, lng: location.lng, timestamp: Date.now() })
+    );
+}
+
+function requestBrowserLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation unavailable'));
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: GEO_CACHE_TTL_MS
+        });
+    });
+}
+
+async function getUserLocation() {
+    const cached = getCachedLocation();
+    if (cached) {
+        return cached;
+    }
+    try {
+        const position = await requestBrowserLocation();
+        const location = {
+            lat: Number(position.coords.latitude),
+            lng: Number(position.coords.longitude)
+        };
+        if (Number.isFinite(location.lat) && Number.isFinite(location.lng)) {
+            setCachedLocation(location);
+            return location;
+        }
+    } catch {
+        return null;
+    }
+    return null;
+}
+
+function updatePharmacyLocationStatus(message, isError = false) {
+    const status = document.getElementById('pharmacy-location-status');
+    if (!status) {
+        return;
+    }
+    status.textContent = message;
+    status.style.color = isError ? '#b91c1c' : '#64748b';
+}
+
+async function capturePharmacyLocation() {
+    if (!navigator.geolocation) {
+        showToast('Geolocation is not supported in this browser', 'error');
+        updatePharmacyLocationStatus('Geolocation not supported.', true);
+        return;
+    }
+
+    const confirmed = window.confirm('Allow MediMart to access your current location to calculate distances for customers?');
+    if (!confirmed) {
+        updatePharmacyLocationStatus('Location permission not granted.', true);
+        return;
+    }
+
+    try {
+        const position = await requestBrowserLocation();
+        const lat = Number(position.coords.latitude);
+        const lng = Number(position.coords.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            throw new Error('Invalid coordinates');
+        }
+        pharmacyLocation = { lat, lng };
+        updatePharmacyLocationStatus('Location captured.', false);
+        showToast('Location captured for registration');
+    } catch {
+        updatePharmacyLocationStatus('Unable to fetch GPS location.', true);
+        showToast('Unable to fetch location', 'error');
     }
 }
 
@@ -305,6 +403,7 @@ function getCityLabel(cityId) {
     }
     return `${city.city_name}, ${city.state}`;
 }
+
 
 function openProfile() {
     if (!currentCustomer) {
@@ -840,11 +939,16 @@ async function loadProducts() {
         const cityId = currentCustomer?.city_id || '';
         const pincode = document.getElementById('pincode-filter')?.value || '';
         const category = selectedCategory || document.getElementById('category-filter')?.value || '';
+        const location = await getUserLocation();
 
         const params = new URLSearchParams();
         if (search) params.append('name', search);
         if (category) params.append('category', category);
         if (pincode) params.append('pincode', pincode);
+        if (location) {
+            params.append('lat', location.lat.toFixed(6));
+            params.append('lng', location.lng.toFixed(6));
+        }
 
         const response = await fetch(`${API_URL}/medicines/search?${params.toString()}`, {
             headers: {
@@ -855,7 +959,10 @@ async function loadProducts() {
 
         if (response.ok) {
             currentResults = data.results || [];
-            displayProducts(currentResults);
+            displayProducts(currentResults, {
+                alternatives: data.alternatives || [],
+                alternativesMessage: data.alternatives_message || ''
+            });
         } else {
             showToast(data.error || 'Failed to load medicines', 'error');
         }
@@ -867,27 +974,30 @@ async function loadProducts() {
 }
 
 // Display Products
-function displayProducts(products) {
+function displayProducts(products, meta = {}) {
     const grid = document.getElementById('products-grid');
+    const alternatives = meta.alternatives || [];
+    const alternativesMessage = meta.alternativesMessage || '';
 
-    if (!products || products.length === 0) {
-        grid.innerHTML = '<p>No medicines found.</p>';
-        return;
-    }
-
-    grid.innerHTML = `
+    const renderProductRows = (items) => `
         <div class="product-list">
             <div class="product-row product-head">
                 <span>Medicine</span>
                 <span>Category</span>
                 <span>Pharmacy</span>
                 <span>Pincode</span>
+                <span>Distance</span>
                 <span>Price</span>
                 <span>Stock</span>
                 <span>Rx</span>
                 <span>Action</span>
             </div>
-            ${products.map(product => `
+            ${items.map(product => {
+                const distanceValue = Number(product.distance_km);
+                const distanceLabel = Number.isFinite(distanceValue)
+                    ? `${distanceValue.toFixed(2)} km`
+                    : '—';
+                return `
                 <div class="product-row">
                     <div class="product-main">
                         <strong>${product.medicine_name}</strong>
@@ -896,14 +1006,37 @@ function displayProducts(products) {
                     <span>${product.category || 'Other'}</span>
                     <span>${product.pharmacy_name}</span>
                     <span>${product.pincode}</span>
+                    <span>${distanceLabel}</span>
                     <span>₹${product.price}</span>
                     <span>${product.stock_quantity}</span>
                     <span>${product.requires_prescription ? 'Yes' : 'No'}</span>
                     <button class="btn btn-primary" onclick="addToCart(${product.medicine_id})">Add</button>
                 </div>
-            `).join('')}
+            `;
+            }).join('')}
         </div>
     `;
+
+    if ((!products || products.length === 0) && (!alternatives || alternatives.length === 0)) {
+        grid.innerHTML = '<p>No medicines found.</p>';
+        return;
+    }
+
+    const sections = [];
+    if (products && products.length) {
+        sections.push(renderProductRows(products));
+    }
+    if (alternatives && alternatives.length) {
+        sections.push(`
+            <div style="margin-top: 24px;">
+                <h3 style="margin-bottom: 8px;">Alternatives</h3>
+                <p style="color: #64748b; margin-bottom: 16px;">${alternativesMessage || 'Alternative medicines are available.'}</p>
+                ${renderProductRows(alternatives)}
+            </div>
+        `);
+    }
+
+    grid.innerHTML = sections.join('');
 }
 
 // Search Products
@@ -1299,21 +1432,29 @@ async function pharmacyRegister(event) {
     }
 
     try {
+        const location = pharmacyLocation || await getUserLocation();
+        const payload = {
+            pharmacy_name,
+            license_number,
+            email,
+            phone,
+            street,
+            pincode,
+            city_id,
+            password
+        };
+
+        if (location) {
+            payload.latitude = location.lat;
+            payload.longitude = location.lng;
+        }
+
         const response = await fetch(`${API_URL}/auth/pharmacy/register`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                pharmacy_name,
-                license_number,
-                email,
-                phone,
-                street,
-                pincode,
-                city_id,
-                password
-            })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
