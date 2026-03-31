@@ -12,13 +12,13 @@ app.use(express.static(path.join(__dirname, '../simple-frontend')));
 
 // Mock Data
 const products = [
-  { id: 1, name: 'Paracetamol 500mg', price: 50, category: 'Pain Relief', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop', description: 'Effective pain and fever relief', stock: 100 },
-  { id: 2, name: 'Vitamin C Tablets', price: 120, category: 'Vitamins', image: 'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=400&h=300&fit=crop', description: 'Boosts immunity', stock: 80 },
+  { id: 1, name: 'Paracetamol 500mg', price: 50, category: 'Medicine', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop', description: 'Effective pain and fever relief', stock: 100 },
+  { id: 2, name: 'Vitamin C Tablets', price: 120, category: 'Medicine', image: 'https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=400&h=300&fit=crop', description: 'Boosts immunity', stock: 80 },
   { id: 3, name: 'Hand Sanitizer 500ml', price: 80, category: 'Hygiene', image: 'https://images.unsplash.com/photo-1584744982491-665216d95f8b?w=400&h=300&fit=crop', description: 'Kills 99.9% germs', stock: 150 },
   { id: 4, name: 'Blood Pressure Monitor', price: 2500, category: 'Devices', image: 'https://images.unsplash.com/photo-1615486511484-92e172cc4fe0?w=400&h=300&fit=crop', description: 'Digital BP monitor', stock: 25 },
   { id: 5, name: 'First Aid Kit', price: 450, category: 'First Aid', image: 'https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=400&h=300&fit=crop', description: 'Complete first aid kit', stock: 60 },
   { id: 6, name: 'Omega-3 Capsules', price: 350, category: 'Supplements', image: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=400&h=300&fit=crop', description: 'Heart health supplement', stock: 90 },
-  { id: 7, name: 'N95 Face Masks (Pack of 10)', price: 250, category: 'Protection', image: 'https://images.unsplash.com/photo-1584634731339-252c581abfc5?w=400&h=300&fit=crop', description: 'Premium quality N95 masks', stock: 200 },
+  { id: 7, name: 'N95 Face Masks (Pack of 10)', price: 250, category: 'Safety', image: 'https://images.unsplash.com/photo-1584634731339-252c581abfc5?w=400&h=300&fit=crop', description: 'Premium quality N95 masks', stock: 200 },
   { id: 8, name: 'Thermometer Digital', price: 180, category: 'Devices', image: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=400&h=300&fit=crop', description: 'Fast and accurate', stock: 75 }
 ];
 

@@ -33,8 +33,7 @@ let addressBook = [];
 let citiesCache = [];
 let pharmacyLocation = null;
 const medicineCategories = [
-    'Pain Relief',
-    'Vitamins',
+    'Medicine',
     'Hygiene',
     'Devices',
     'First Aid',
@@ -43,8 +42,7 @@ const medicineCategories = [
 ];
 let selectedCategory = '';
 const categoryImages = {
-    'Pain Relief': "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90' viewBox='0 0 120 90'><rect width='120' height='90' rx='12' fill='%23e0f2fe'/><rect x='28' y='34' width='64' height='22' rx='11' fill='%230f766e'/><rect x='34' y='39' width='24' height='12' rx='6' fill='%23ffffff'/></svg>",
-    'Vitamins': "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90' viewBox='0 0 120 90'><rect width='120' height='90' rx='12' fill='%23fef9c3'/><rect x='46' y='18' width='28' height='54' rx='10' fill='%23f59e0b'/><rect x='50' y='14' width='20' height='10' rx='4' fill='%230f172a'/></svg>",
+    'Medicine': "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90' viewBox='0 0 120 90'><rect width='120' height='90' rx='12' fill='%23e0f2fe'/><rect x='28' y='34' width='64' height='22' rx='11' fill='%230f766e'/><rect x='34' y='39' width='24' height='12' rx='6' fill='%23ffffff'/></svg>",
     'Hygiene': "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90' viewBox='0 0 120 90'><rect width='120' height='90' rx='12' fill='%23dcfce7'/><path d='M60 18c10 14 16 24 16 34a16 16 0 1 1-32 0c0-10 6-20 16-34z' fill='%2316a34a'/></svg>",
     'Devices': "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90' viewBox='0 0 120 90'><rect width='120' height='90' rx='12' fill='%23e2e8f0'/><circle cx='42' cy='50' r='14' stroke='%230f172a' stroke-width='6' fill='none'/><path d='M56 50h20c8 0 12-6 12-12' stroke='%230f172a' stroke-width='6' fill='none' stroke-linecap='round'/></svg>",
     'First Aid': "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90' viewBox='0 0 120 90'><rect width='120' height='90' rx='12' fill='%23fee2e2'/><rect x='50' y='26' width='20' height='38' fill='%23ef4444'/><rect x='41' y='35' width='38' height='20' fill='%23ef4444'/></svg>",
@@ -625,7 +623,7 @@ function showPharmacyPortal() {
         return;
     }
     if (isCustomerActive()) {
-        const category = selectedCategory || document.getElementById('category-filter')?.value || '';
+        const category = selectedCategory || '';
         showToast('Customer session active. Logout to switch roles.', 'error');
         return;
     }
@@ -959,10 +957,7 @@ async function loadProducts() {
 
         if (response.ok) {
             currentResults = data.results || [];
-            displayProducts(currentResults, {
-                alternatives: data.alternatives || [],
-                alternativesMessage: data.alternatives_message || ''
-            });
+            displayProducts(currentResults);
         } else {
             showToast(data.error || 'Failed to load medicines', 'error');
         }
@@ -974,10 +969,8 @@ async function loadProducts() {
 }
 
 // Display Products
-function displayProducts(products, meta = {}) {
+function displayProducts(products) {
     const grid = document.getElementById('products-grid');
-    const alternatives = meta.alternatives || [];
-    const alternativesMessage = meta.alternativesMessage || '';
 
     const renderProductRows = (items) => `
         <div class="product-list">
@@ -1017,26 +1010,12 @@ function displayProducts(products, meta = {}) {
         </div>
     `;
 
-    if ((!products || products.length === 0) && (!alternatives || alternatives.length === 0)) {
+    if (!products || products.length === 0) {
         grid.innerHTML = '<p>No medicines found.</p>';
         return;
     }
 
-    const sections = [];
-    if (products && products.length) {
-        sections.push(renderProductRows(products));
-    }
-    if (alternatives && alternatives.length) {
-        sections.push(`
-            <div style="margin-top: 24px;">
-                <h3 style="margin-bottom: 8px;">Alternatives</h3>
-                <p style="color: #64748b; margin-bottom: 16px;">${alternativesMessage || 'Alternative medicines are available.'}</p>
-                ${renderProductRows(alternatives)}
-            </div>
-        `);
-    }
-
-    grid.innerHTML = sections.join('');
+    grid.innerHTML = renderProductRows(products);
 }
 
 // Search Products
@@ -1051,7 +1030,7 @@ function renderCategoryCards() {
     }
 
     grid.innerHTML = medicineCategories.map(category => `
-        <button class="category-card" onclick="selectCategory('${category}')">
+        <button class="category-card" data-category="${category}" onclick="selectCategory('${category}')">
             <img src="${categoryImages[category] || placeholderImage}" alt="${category}">
             <span>${category}</span>
         </button>
@@ -1059,15 +1038,29 @@ function renderCategoryCards() {
 }
 
 function selectCategory(category) {
-    selectedCategory = category;
+    if (selectedCategory === category) {
+        selectedCategory = '';
+    } else {
+        selectedCategory = category;
+    }
+    syncCategoryFilter();
+    loadProducts();
+}
+
+function handleCategoryFilterChange(value) {
+    selectedCategory = value || '';
+    syncCategoryFilter();
+    loadProducts();
+}
+
+function syncCategoryFilter() {
     const input = document.getElementById('category-filter');
     if (input) {
-        input.value = category;
+        input.value = selectedCategory;
     }
     document.querySelectorAll('.category-card').forEach(card => {
-        card.classList.toggle('active', card.textContent.trim() === category);
+        card.classList.toggle('active', card.dataset.category === selectedCategory);
     });
-    loadProducts();
 }
 
 // Add to Cart

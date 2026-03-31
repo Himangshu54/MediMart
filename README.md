@@ -12,7 +12,6 @@ MediMart includes two runnable setups:
 - Customer, pharmacy, and admin flows
 - Medicine search by category/city/pincode
 - Location-aware sorting (nearest pharmacy first)
-- Alternative medicine suggestions (based on composition in description)
 - Cart and order management
 - Prescription uploads (JPG/PNG/PDF)
 - Responsive UI with modern styling
@@ -130,7 +129,6 @@ http://localhost:5500
 
 **Medicines**
 - `GET /medicines/search`
-- `GET /medicines/categories`
 
 **Cart & Orders**
 - `POST /cart/add`
@@ -143,7 +141,7 @@ http://localhost:5500
 **Pharmacy**
 - `GET /pharmacy/orders`
 - `GET /pharmacy/stock`
-- `PUT /pharmacy/stock/<medicine_id>`
+- `PATCH /pharmacy/stock/<medicine_id>`
 
 **Admin**
 - `GET /admin/pharmacies`
@@ -152,11 +150,10 @@ http://localhost:5500
 **Prescription Upload**
 - `POST /prescriptions`
 
-## 📍 Location & Alternatives Notes
+## 📍 Location Notes
 
 - Location sorting uses the browser GPS (free) and works on HTTPS or localhost.
-- Pharmacies should capture their location during registration via the "Use current location" button.
-- Alternative medicines are derived from keywords in the medicine description. Keep composition text in `description` for reliable matches.
+- Pharmacy location capture during registration is optional.
 
 ## 📄 License
 

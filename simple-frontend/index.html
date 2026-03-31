@@ -91,7 +91,15 @@
 
             <div class="filters">
                 <input type="text" id="search-input" placeholder="Search medicines...">
-                <input type="text" id="category-filter" placeholder="Category" readonly>
+                <select id="category-filter" onchange="handleCategoryFilterChange(this.value)">
+                    <option value="">All Categories</option>
+                    <option value="Medicine">Medicine</option>
+                    <option value="Hygiene">Hygiene</option>
+                    <option value="Devices">Devices</option>
+                    <option value="First Aid">First Aid</option>
+                    <option value="Supplements">Supplements</option>
+                    <option value="Safety">Safety</option>
+                </select>
                 <input type="number" id="city-filter" placeholder="City ID" readonly>
                 <input type="text" id="pincode-filter" placeholder="Pincode">
                 <button class="btn btn-primary" onclick="searchProducts()">Search</button>
@@ -337,8 +345,7 @@
                         <div class="field">
                             <label>Category</label>
                             <select id="medicine-category" required>
-                                <option value="Pain Relief">Pain Relief</option>
-                                <option value="Vitamins">Vitamins</option>
+                                <option value="Medicine">Medicine</option>
                                 <option value="Hygiene">Hygiene</option>
                                 <option value="Devices">Devices</option>
                                 <option value="First Aid">First Aid</option>

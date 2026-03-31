@@ -596,7 +596,7 @@ def admin_login():
 
     if not admin:
         return jsonify({"errors": {"email": ["Email not found"]}}), 404
-    if not check_password_hash(admin["password"], password):
+    if admin["password"] != password:
         return jsonify({"errors": {"password": ["Invalid password"]}}), 401
 
     access_token = create_access_token(admin["admin_id"], "admin")
@@ -630,7 +630,7 @@ def admin_register():
 
     if not admin:
         return jsonify({"errors": {"email": ["Email not found"]}}), 404
-    if not check_password_hash(admin["password"], password):
+    if admin["password"] != password:
         return jsonify({"errors": {"password": ["Invalid password"]}}), 401
 
     access_token = create_access_token(admin["admin_id"], "admin")
@@ -768,45 +768,10 @@ def search_medicines():
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
 
-    alternatives = []
-    alternatives_message = None
-    if not rows and name:
-        tokens = extract_composition_tokens(name)
-        if tokens:
-            alt_filters = []
-            alt_params = []
-            if include_distance:
-                alt_params.extend([user_lat, user_lng, user_lat])
-            if category:
-                alt_filters.append("m.category = %s")
-                alt_params.append(category)
-            if city_id:
-                alt_filters.append("c.city_id = %s")
-                alt_params.append(city_id)
-            if pincode:
-                alt_filters.append("p.pincode = %s")
-                alt_params.append(pincode)
-            for token in tokens:
-                alt_filters.append("m.description LIKE %s")
-                alt_params.append(f"%{token}%")
-            alt_filters.append("m.medicine_name NOT LIKE %s")
-            alt_params.append(f"%{name}%")
-
-            alt_query = base_query
-            if alt_filters:
-                alt_query += " AND " + " AND ".join(alt_filters)
-            if include_distance:
-                alt_query += " ORDER BY (distance_km IS NULL) ASC, distance_km ASC"
-            alt_query += " LIMIT 20"
-
-            cur.execute(alt_query, tuple(alt_params))
-            alternatives = cur.fetchall()
-            if alternatives:
-                alternatives_message = "No exact brand found. Showing alternatives with similar composition."
     cur.close()
     conn.close()
 
-    return jsonify({"results": rows, "alternatives": alternatives, "alternatives_message": alternatives_message}), 200
+    return jsonify({"results": rows}), 200
 
 
 # -----------------------------

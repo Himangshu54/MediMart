@@ -426,7 +426,9 @@ body {
     min-width: 0;
     font-size: 13px;
     line-height: 1.2;
-    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .category-card img {
@@ -1240,16 +1242,25 @@ body {
 .stock-table {
     display: grid;
     gap: 12px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
 }
 
 .stock-row {
     display: grid;
-    grid-template-columns: 1.4fr 0.9fr 0.9fr 0.8fr 0.8fr 0.9fr 0.8fr;
+    grid-template-columns: minmax(200px, 1.6fr) minmax(140px, 1fr) minmax(140px, 1fr) minmax(110px, 0.9fr) minmax(90px, 0.9fr) minmax(140px, 1fr) minmax(110px, 0.9fr);
     align-items: center;
     gap: 10px;
     background: #f9fafb;
     padding: 12px;
     border-radius: 12px;
+    width: 100%;
+}
+
+.stock-row > span {
+    overflow-wrap: anywhere;
+    min-width: 0;
 }
 
 .stock-row input {
@@ -1257,6 +1268,13 @@ body {
     border-radius: 10px;
     border: 1px solid #e5e7eb;
     font-size: 13px;
+    min-width: 110px;
+    width: 100%;
+}
+
+.stock-row .btn {
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .stock-head {
